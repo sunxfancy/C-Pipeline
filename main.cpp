@@ -28,8 +28,8 @@ int main() {
     Pass2* p2 = new Pass2();
     Pass3* p3 = new Pass3();
     Pass4* p4 = new Pass4();
-
-    auto pipeline = *p1 >> *p2 >> *p3 >> *p4;
+    auto pipeline2 = *p3 >> *p4;    
+    auto pipeline = (*p1 >> *p2)->next(p3, &pipeline2) >> *p4;
     auto ret = pipeline("Hello");
     cout << ret;
     return 0;

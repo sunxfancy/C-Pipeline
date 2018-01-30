@@ -40,7 +40,6 @@ public:
     }
 };
 
-
 template<typename F> 
 class PassRunner {
 public:
@@ -54,17 +53,19 @@ public:
     auto operator->() {
         return this;
     }
-    template<typename W, typename Q>
-    auto next(Pass<W, Q>* pass) {
-        return CreatePassRunner([=](auto data){ 
+    template<typename W, typename Q, typename G>
+    auto next(Pass<W, Q>* pass, PassRunner<G>* pipeline = nullptr) {
+         return CreatePassRunner([=](auto data){ 
             W ret = f(data); 
-            return pass->Execute(ret); 
+            if (pipeline) (*pipeline)(ret);
+            return pass->Execute(ret);
         });
     }
-    template<typename W, typename Q>
-    auto branch(Pass<W, Q>* pass) {
+    template<typename W, typename Q, typename G>
+    auto branch(Pass<W, Q>* pass, PassRunner<G>* pipeline) {
         return CreatePassRunner([=](auto data){ 
             W ret = f(data); 
+            (*pipeline)(pass->Branch(data));
             return pass->Execute(ret); 
         });
     }
