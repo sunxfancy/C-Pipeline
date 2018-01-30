@@ -13,20 +13,29 @@ PassRunner<F> CreatePassRunner(F&& f);
 template<typename T>
 class DataHolder;
 
-template<typename T, typename R> 
+template<typename T, typename R, typename B = R> 
 class Pass {
 public:
     // Execute function will do the main job in a pass, and generate a
     // meaningful result
     virtual R Execute(T data) = 0;
+    virtual B Branch(T data) { return B(0); }
+
+    template<typename Q>
+    auto next(Pass<R, Q>* pass) {
+        return CreatePassRunner([=](T data){ 
+            R ret = Execute(data); 
+            return pass->Execute(ret); 
+        });
+    }
 
     // Set the next pass
     template<typename Q>
-    auto Next(Pass<R, Q>* pass)
+    auto operator >> (Pass<R, Q>& pass)
     {
-        return CreatePassRunner([=](T data){ 
-                R ret = Execute(data); 
-                return pass->Execute(ret); 
+        return CreatePassRunner([&](T data){ 
+            R ret = Execute(data); 
+            return pass.Execute(ret); 
         });
     }
 };
@@ -45,14 +54,26 @@ public:
     auto operator->() {
         return this;
     }
-
-    typedef function_traits<F> traits;
-
     template<typename W, typename Q>
-    auto Next(Pass<W, Q>* pass) {
+    auto next(Pass<W, Q>* pass) {
         return CreatePassRunner([=](auto data){ 
             W ret = f(data); 
             return pass->Execute(ret); 
+        });
+    }
+    template<typename W, typename Q>
+    auto branch(Pass<W, Q>* pass) {
+        return CreatePassRunner([=](auto data){ 
+            W ret = f(data); 
+            return pass->Execute(ret); 
+        });
+    }
+
+    template<typename W, typename Q>
+    auto operator >> (Pass<W, Q>& pass) {
+        return CreatePassRunner([&](auto data){ 
+            W ret = f(data); 
+            return pass.Execute(ret); 
         });
     }
 private:
