@@ -33,9 +33,10 @@ int main() {
 
     // next1(p5)->next11(p6);
 
-    auto pipeline2 = begin(p5) -> next(p6);    
-    auto pipeline = begin(p1) -> branch(p2, &pipeline2) -> next(p3) -> next(p4, p6);
+    auto pipeline2 = begin(p5) -> next(p6);   
+    cout << pipeline2("Well") << endl;
+    auto pipeline = p1 -> branch(p2, pipeline2) -> next(p3) -> next(p4, p6);
     auto ret = pipeline("Hello");
-    cout << ret;
+    cout << ret << endl;
     return 0;
 }

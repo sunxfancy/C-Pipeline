@@ -45,43 +45,43 @@ public:
     }
 
     template<typename Q, typename W, typename E, typename G>
-    auto next(Pass<R, Q, W, E>* pass, PassRunner<G>* pipeline) {
-        return CreatePassRunner([=](T data) { 
+    auto next(Pass<R, Q, W, E>* pass, PassRunner<G>& pipeline) {
+        return CreatePassRunner([=, &pipeline](T data) { 
             R ret = Execute(data); 
             Q ans = pass->Execute(ret);
-            if (pipeline) (*pipeline)(ans);
+            pipeline(ans);
             return ans;
         });
     }
 
     template<typename Q, typename W, typename E, typename G, typename K>
-    auto next(Pass<R, Q, W, E>* pass, DataHolder<K>* holder, PassRunner<G>* pipeline) {
-        return CreatePassRunner([=](T data) { 
+    auto next(Pass<R, Q, W, E>* pass, DataHolder<K>* holder, PassRunner<G>& pipeline) {
+        return CreatePassRunner([=, &pipeline](T data) { 
             R ret = Execute(data); 
             if (holder) pass->Join(holder->getData());
             Q ans = pass->Execute(ret);
-            if (pipeline) (*pipeline)(ans);
+            pipeline(ans);
             return ans;
         });
     }
 
     template<typename Q, typename W, typename E, typename G>
-    auto branch(Pass<R, Q, W, E>* pass, PassRunner<G>* pipeline) {
-        return CreatePassRunner([=](T data) { 
+    auto branch(Pass<R, Q, W, E>* pass, PassRunner<G>& pipeline) {
+        return CreatePassRunner([=, &pipeline](T data) { 
             R ret = Execute(data); 
             Q ans = pass->Execute(ret);
-            if (pipeline) (*pipeline)(pass->Branch(ans));
+            pipeline(pass->Branch(ans));
             return ans;
         });
     }
     
     template<typename Q, typename W, typename E, typename G, typename K>
-    auto branch(Pass<R, Q, W, E>* pass, DataHolder<K>* holder, PassRunner<G>* pipeline) {
-        return CreatePassRunner([=](T data) { 
+    auto branch(Pass<R, Q, W, E>* pass, DataHolder<K>* holder, PassRunner<G>& pipeline) {
+        return CreatePassRunner([=, &pipeline](T data) { 
             R ret = Execute(data); 
             if (holder) pass->Join(holder->getData());
             Q ans = pass->Execute(ret);
-            if (pipeline) (*pipeline)(pass->Branch(ans));
+            pipeline(pass->Branch(ans));
             return ans;
         });
     }
@@ -104,7 +104,7 @@ public:
 
 template<typename R, typename Q, typename W, typename E>
 auto begin(Pass<R, Q, W, E>* pass) {
-    return CreatePassRunner([pass](R data) { 
+    return CreatePassRunner([=](R data) { 
         Q ans = pass->Execute(data);
         return ans;
     });
@@ -112,7 +112,7 @@ auto begin(Pass<R, Q, W, E>* pass) {
 
 template<typename R, typename Q, typename W, typename E, typename K>
 auto begin(Pass<R, Q, W, E>* pass, DataHolder<K>* holder) {
-    return CreatePassRunner([pass, holder](R data) { 
+    return CreatePassRunner([=](R data) { 
         if (holder) pass->Join(holder->getData());
         Q ans = pass->Execute(data);
         return ans;
@@ -120,39 +120,39 @@ auto begin(Pass<R, Q, W, E>* pass, DataHolder<K>* holder) {
 }
 
 template<typename R, typename Q, typename W, typename E, typename G>
-auto begin(Pass<R, Q, W, E>* pass, PassRunner<G>* pipeline) {
-    return CreatePassRunner([pass, pipeline](R data) { 
+auto begin(Pass<R, Q, W, E>* pass, PassRunner<G>& pipeline) {
+    return CreatePassRunner([=, &pipeline](R data) { 
         Q ans = pass->Execute(data);
-        if (pipeline) (*pipeline)(ans);
+        pipeline(ans);
         return ans;
     });
 }
 
 template<typename R, typename Q, typename W, typename E, typename G, typename K>
-auto begin(Pass<R, Q, W, E>* pass, DataHolder<K>* holder, PassRunner<G>* pipeline) {
-    return CreatePassRunner([pass, holder, pipeline](R data) { 
+auto begin(Pass<R, Q, W, E>* pass, DataHolder<K>* holder, PassRunner<G>& pipeline) {
+    return CreatePassRunner([=, &pipeline](R data) { 
         if (holder) pass->Join(holder->getData());
         Q ans = pass->Execute(data);
-        if (pipeline) (*pipeline)(ans);
+        pipeline(ans);
         return ans;
     });
 }
 
 template<typename R, typename Q, typename W, typename E, typename G>
-auto branch(Pass<R, Q, W, E>* pass, PassRunner<G>* pipeline) {
-    return CreatePassRunner([pass, pipeline](R data) { 
+auto branch(Pass<R, Q, W, E>* pass, PassRunner<G>& pipeline) {
+    return CreatePassRunner([=, &pipeline](R data) { 
         Q ans = pass->Execute(data);
-        if (pipeline) (*pipeline)(pass->Branch(ans));
+        pipeline(pass->Branch(ans));
         return ans;
     });
 }
 
 template<typename R, typename Q, typename W, typename E, typename G, typename K>
-auto branch(Pass<R, Q, W, E>* pass, DataHolder<K>* holder, PassRunner<G>* pipeline) {
-    return CreatePassRunner([pass, holder, pipeline](R data) { 
+auto branch(Pass<R, Q, W, E>* pass, DataHolder<K>* holder, PassRunner<G>& pipeline) {
+    return CreatePassRunner([=, &pipeline](R data) { 
         if (holder) pass->Join(holder->getData());
         Q ans = pass->Execute(data);
-        if (pipeline) (*pipeline)(pass->Branch(ans));
+        pipeline(pass->Branch(ans));
         return ans;
     });
 }
@@ -163,7 +163,7 @@ public:
     PassRunner(F&& f) : f(forward<F>(f)) {}
 
     template<typename T>
-    auto operator()(T data) {
+    auto operator()(T data) const {
         return f(data);
     }
 
@@ -189,41 +189,41 @@ public:
     }
 
     template<typename W, typename Q, typename R, typename E, typename G>
-    auto next(Pass<W, Q, R, E>* pass, PassRunner<G>* pipeline) {
-         return CreatePassRunner([=](auto data){ 
+    auto next(Pass<W, Q, R, E>* pass, PassRunner<G>& pipeline) {
+         return CreatePassRunner([=, &pipeline](auto data){ 
             W ret = f(data); 
-            if (pipeline) (*pipeline)(ret);
+            pipeline(ret);
             return pass->Execute(ret);
         });
     }
 
     template<typename W, typename Q, typename R, typename E, typename G, typename J>
-    auto next(Pass<W, Q, R, E>* pass, DataHolder<J>* holder, PassRunner<G>* pipeline) {
-         return CreatePassRunner([=](auto data){ 
+    auto next(Pass<W, Q, R, E>* pass, DataHolder<J>* holder, PassRunner<G>& pipeline) {
+         return CreatePassRunner([=, &pipeline](auto data){ 
             W ret = f(data); 
-            if (pipeline) (*pipeline)(ret);
+            pipeline(ret);
             if (holder) pass->Join(holder->getData());
             return pass->Execute(ret);
         });
     }
     
     template<typename W, typename Q, typename R, typename E, typename G>
-    auto branch(Pass<W, Q, R, E>* pass, PassRunner<G>* pipeline) {
-        return CreatePassRunner([=](auto data){ 
+    auto branch(Pass<W, Q, R, E>* pass, PassRunner<G>& pipeline) {
+        return CreatePassRunner([=, &pipeline](auto data){ 
             W ret = f(data); 
             Q ans = pass->Execute(ret); 
-            if (pipeline) (*pipeline)(pass->Branch(ret));
+            pipeline(pass->Branch(ret));
             return ans;
         });
     }
 
     template<typename W, typename Q, typename R, typename E, typename G, typename J>
-    auto branch(Pass<W, Q, R, E>* pass, DataHolder<J>* holder, PassRunner<G>* pipeline) {
-        return CreatePassRunner([=](auto data){ 
+    auto branch(Pass<W, Q, R, E>* pass, DataHolder<J>* holder, PassRunner<G>& pipeline) {
+        return CreatePassRunner([=, &pipeline](auto data){ 
             W ret = f(data); 
             if (holder) pass->Join(holder->getData()); 
             Q ans = pass->Execute(ret);
-            if (pipeline) (*pipeline)(pass->Branch(ret));
+            pipeline(pass->Branch(ret));
             return ans;
         });
     }
